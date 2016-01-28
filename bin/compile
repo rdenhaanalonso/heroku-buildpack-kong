@@ -112,6 +112,7 @@ LUA_VERSION=5.1.5
 LUAROCKS_VERSION=2.2.2
 KONG_VERSION=0.6.0
 KONG_ROCK_VERSION=${KONG_VERSION}-1
+SERF_VERSION=0.7.0
 
 # Cache the build
 VENDOR_CACHE_DIR=${BP_CACHE_DIR}/vendor
@@ -206,6 +207,10 @@ then
   luarocks build --pack-binary-rock ./kong-${KONG_ROCK_VERSION}.rockspec
   luarocks install kong-${KONG_ROCK_VERSION}.all.rock
   cd ..
+
+  topic "Installing Serf"
+  tar -xzf serf_${SERF_VERSION}_linux_amd64.zip
+  mv serf $APP_PREFIX/bin/
 
   topic "Caching build"
   mkdir -p $PREFIX_CACHE_DIR
