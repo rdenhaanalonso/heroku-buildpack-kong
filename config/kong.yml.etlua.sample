@@ -6,13 +6,10 @@ custom_plugins:
 nginx_working_dir: /app/nginx-working
 
 ## Port configuration
-proxy_listen: <%= proxy_port %>
-proxy_listen_ssl: <%= proxy_ssl_port %>
-admin_api_listen: <%= admin_api_port %>
-cluster_listen: <%= cluster_port %>
-
-## Secondary port configuration
-dnsmasq_port: <%= dnsmasq_port %>
+proxy_listen: "0.0.0.0:<%= proxy_port %>"
+proxy_listen_ssl: "0.0.0.0:<%= proxy_ssl_port %>"
+admin_api_listen: "0.0.0.0:<%= admin_api_port %>"
+cluster_listen: "<%= cluster_listen %>"
 
 ## Specify the DAO to use
 database: cassandra

@@ -16,6 +16,13 @@ local cert_filename     = arg[2].."/cassandra.cert"
 local assigned_port     = os.getenv("PORT") or 8000
 local expose_service    = os.getenv("KONG_EXPOSE") -- `proxy` (default), `admin`, `proxyssl`, `dnsmasq`
 
+local cluster_port      = os.getenv("KONG_CLUSTER_PRIVATE_PORT") or 7946
+local cluster_address   = os.getenv("KONG_CLUSTER_PRIVATE_IP")
+if not cluster_address then
+  error("Configuration failed: requires `KONG_CLUSTER_PRIVATE_IP` environment variable.")
+end
+local cluster_listen    = cluster_address..":"..cluster_port
+
 -- Configure Cassandra using Instaclustr or Heroku-style config vars
 local cassandra_hosts   = {}
 local cassandra_user
@@ -110,6 +117,7 @@ local values = {
   proxy_port          = proxy_port,
   proxy_ssl_port      = proxy_ssl_port,
   admin_api_port      = admin_api_port,
+  cluster_listen      = cluster_listen,
   dnsmasq_port        = dnsmasq_port,
   cassandra_hosts     = cassandra_hosts,
   cassandra_user      = cassandra_user,
