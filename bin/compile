@@ -209,7 +209,7 @@ then
   cd ..
 
   topic "Installing Serf"
-  tar -xzf serf_${SERF_VERSION}_linux_amd64.zip
+  unzip serf_${SERF_VERSION}_linux_amd64.zip
   mv serf $APP_PREFIX/bin/
 
   topic "Caching build"
