@@ -146,26 +146,8 @@ config_file:close()
 
 -- Call into kong.cli.services modules to prepare the services (nginx, dnsmasq, serf)
 
-function prepare_all(configuration, configuration_path)
-  local prepared_services = {}
-
-  -- Prepare database if not initialized yet
-  local _, err = services.prepare_database(configuration)
-  if err then
-    error(err)
-  end
-
-  for _, v in ipairs(services.services) do
-    local service = v(configuration, configuration_path)
-    table.insert(prepared_services, service._name, service)
-    service:prepare()
-  end
-
-  return prepared_services
-end
-
 local configuration, configuration_path = config_loader.load_default(config_filename)
-local prepared_services = prepare_all(configuration, configuration_path)
+local prepared_services = services.prepare_all(configuration, configuration_path)
 
 print("Kong configuration "..S.block(configuration))
 print("Kong prepared_services "..S.block(prepared_services))
