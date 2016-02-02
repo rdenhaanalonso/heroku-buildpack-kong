@@ -212,8 +212,8 @@ else
 fi
 
 topic "Building Kong"
-curl --silent --location -O "https://github.com/mars/kong/archive/public-service-prepare.zip"
-unzip -o kong-public-service-prepare.zip
+curl --silent --location --output kong.zip "https://github.com/mars/kong/archive/public-service-prepare.zip"
+unzip -o kong.zip
 cd kong-public-service-prepare
 luarocks build --pack-binary-rock ./kong-*.rockspec
 luarocks install kong-*.all.rock
