@@ -224,8 +224,7 @@ else
   cd $KONG_SOURCE_DIR
 fi
 git checkout public-service-prepare
-luarocks build --pack-binary-rock ./kong-*.rockspec
-luarocks install kong-*.all.rock
+luarocks make ./kong-*.rockspec
 
 topic "Installing Lua rocks for kong-12f"
 luarocks install etlua 1.2.0-1
