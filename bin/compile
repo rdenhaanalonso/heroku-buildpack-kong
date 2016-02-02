@@ -112,6 +112,8 @@ LUA_VERSION=5.1.5
 LUAROCKS_VERSION=2.2.2
 SERF_VERSION=0.7.0
 
+KONG_SOURCE_DIR=${BP_CACHE_DIR}/kong-source
+
 # Cache the build
 VENDOR_CACHE_DIR=${BP_CACHE_DIR}/vendor
 mkdir -p ${VENDOR_CACHE_DIR}
@@ -213,12 +215,16 @@ fi
 
 topic "Building Kong"
 luarocks remove kong || true
-curl --silent --location --output kong.zip "https://github.com/mars/kong/archive/public-service-prepare.zip"
-unzip -o kong.zip
-cd kong-public-service-prepare
+if [ -d "$KONG_SOURCE_DIR" ]
+  cd $KONG_SOURCE_DIR
+  git pull
+else
+  git clone https://github.com/mars/kong.git $KONG_SOURCE_DIR
+  cd $KONG_SOURCE_DIR
+then
+git checkout public-service-prepare
 luarocks build --pack-binary-rock ./kong-*.rockspec
 luarocks install kong-*.all.rock
-cd ..
 
 topic "Installing Lua rocks for kong-12f"
 luarocks install etlua 1.2.0-1
