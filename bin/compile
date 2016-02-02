@@ -216,12 +216,13 @@ fi
 topic "Building Kong"
 luarocks remove kong || true
 if [ -d "$KONG_SOURCE_DIR" ]
+then
   cd $KONG_SOURCE_DIR
   git pull
 else
   git clone https://github.com/mars/kong.git $KONG_SOURCE_DIR
   cd $KONG_SOURCE_DIR
-then
+fi
 git checkout public-service-prepare
 luarocks build --pack-binary-rock ./kong-*.rockspec
 luarocks install kong-*.all.rock
