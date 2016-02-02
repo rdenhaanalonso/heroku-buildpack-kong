@@ -20,7 +20,7 @@ local template_filename = arg[1]
 local config_filename   = arg[2].."/config/kong.yml"
 local cert_filename     = arg[2].."/config/cassandra.cert"
 
-local profile_filename  = arg[2].."/profile.d/kong-env.sh"
+local profile_filename  = arg[2].."/.profile.d/kong-env.sh"
 
 -- Read environment variables for runtime config
 local assigned_port     = os.getenv("PORT") or 8000
