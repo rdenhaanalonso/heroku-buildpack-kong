@@ -110,8 +110,6 @@ NGINX_VERSION=1.9.3
 LUANGINX_VERSION=0.9.16
 LUA_VERSION=5.1.5
 LUAROCKS_VERSION=2.2.2
-KONG_VERSION=0.6.0
-KONG_ROCK_VERSION=${KONG_VERSION}-1
 SERF_VERSION=0.7.0
 
 # Cache the build
@@ -201,13 +199,6 @@ then
   make install
   cd ..  
 
-  topic "Building Kong"
-  tar -xf kong-${KONG_VERSION}.tar.gz
-  cd kong-${KONG_VERSION}
-  luarocks build --pack-binary-rock ./kong-${KONG_ROCK_VERSION}.rockspec
-  luarocks install kong-${KONG_ROCK_VERSION}.all.rock
-  cd ..
-
   topic "Installing Serf"
   unzip serf_${SERF_VERSION}_linux_amd64.zip
   mv serf $APP_PREFIX/bin/
@@ -219,6 +210,14 @@ then
 else
   error "Error detecting cached build: diff exited ${DIFF_STATUS}"
 fi
+
+topic "Building Kong"
+curl --silent --location --output kong.zip "https://github.com/mars/kong/archive/public-service-prepare.zip"
+unzip kong.zip
+cd kong-public-service-prepare
+luarocks build --pack-binary-rock ./kong-*.rockspec
+luarocks install kong-*.all.rock
+cd ..
 
 topic "Installing Lua rocks for kong-12f"
 luarocks install etlua 1.2.0-1

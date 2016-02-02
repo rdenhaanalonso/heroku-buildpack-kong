@@ -150,12 +150,12 @@ function prepare_all(configuration, configuration_path)
   local prepared_services = {}
 
   -- Prepare database if not initialized yet
-  local _, err = prepare_database(configuration)
+  local _, err = services.prepare_database(configuration)
   if err then
     error(err)
   end
 
-  for _, v in ipairs(services) do
+  for _, v in ipairs(services.services) do
     local service = v(configuration, configuration_path)
     table.insert(prepared_services, service._name, service)
     service:prepare()
