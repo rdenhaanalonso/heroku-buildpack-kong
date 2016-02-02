@@ -212,7 +212,7 @@ else
 fi
 
 topic "Building Kong"
-luarocks uninstall kong
+luarocks remove kong || true
 curl --silent --location --output kong.zip "https://github.com/mars/kong/archive/public-service-prepare.zip"
 unzip -o kong.zip
 cd kong-public-service-prepare
