@@ -4,6 +4,7 @@ local _ = require "moses"
 
 local S = require "serpent"
 
+local constants = require "kong.constants"
 local config_loader = require "kong.tools.config_loader"
 local services = require "kong.cli.utils.services"
 local cluster_utils = require "kong.tools.cluster"
@@ -174,7 +175,12 @@ print("Kong prepared_services "..S.block(prepared_services))
 local env_file
 env_file = io.open(profile_filename, "a+")
 
-env_file:write("export DNSMASQ_PORT="..configuration.dns_resolver.port)
+env_file:write("export KONG_CONF="..prepared_services.nginx._configuration_path.."\n")
+
+env_file:write("export NGINX_WORKING_DIR="..configuration.nginx_working_dir.."\n")
+env_file:write("export NGINX_CONFIG="..constants.CLI.NGINX_CONFIG.."\n")
+
+env_file:write("export DNSMASQ_PORT="..configuration.dns_resolver.port.."\n")
 
 env_file:write("export SERF_CLUSTER_LISTEN="..configuration.cluster_listen.."\n")
 env_file:write("export SERF_CLUSTER_LISTEN_RPC="..configuration.cluster_listen_rpc.."\n")
