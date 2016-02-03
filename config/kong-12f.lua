@@ -26,6 +26,10 @@ local profile_filename  = arg[2].."/.profile.d/kong-env.sh"
 local assigned_port     = os.getenv("PORT") or 8000
 local expose_service    = os.getenv("KONG_EXPOSE") -- `proxy` (default), `admin`, `proxyssl`, `dnsmasq`
 
+local cluster_secret    = os.getenv("KONG_CLUSTER_SECRET")
+if not cluster_secret then
+  error("Configuration failed: requires `KONG_CLUSTER_SECRET` environment variable; create with `serf keygen`.")
+end
 local cluster_port      = os.getenv("KONG_CLUSTER_PRIVATE_PORT") or 7946
 local cluster_address   = os.getenv("KONG_CLUSTER_PRIVATE_IP")
 if not cluster_address then
@@ -128,6 +132,7 @@ local values = {
   proxy_ssl_port      = proxy_ssl_port,
   admin_api_port      = admin_api_port,
   cluster_listen      = cluster_listen,
+  cluster_secret      = cluster_secret,
   dnsmasq_port        = dnsmasq_port,
   cassandra_hosts     = cassandra_hosts,
   cassandra_user      = cassandra_user,
