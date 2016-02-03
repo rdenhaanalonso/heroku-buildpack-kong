@@ -225,7 +225,7 @@ else
 fi
 git checkout public-service-prepare
 luarocks make ./kong-*.rockspec
-luarocks install --only-deps ./kong-*.rockspec
+luarocks install --only-deps --local ./kong-*.rockspec
 
 topic "Installing Lua rocks for kong-12f"
 luarocks install etlua 1.2.0-1
