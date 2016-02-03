@@ -184,9 +184,6 @@ then
   make install
   cd ..
 
-  topic "Symlinking LuaJIT from OpenResty"
-  ln -s $APP_PREFIX/luajit/bin/luajit-2.1.0-alpha $APP_PREFIX/bin/luajit
-
   topic "Building Lua"
   tar -xf lua-${LUA_VERSION}.tar.gz
   cp lua-Makefile lua-${LUA_VERSION}/Makefile
@@ -215,6 +212,9 @@ then
 else
   error "Error detecting cached build: diff exited ${DIFF_STATUS}"
 fi
+
+topic "Symlinking LuaJIT from OpenResty"
+ln -s $APP_PREFIX/luajit/bin/luajit-2.1.0-alpha $APP_PREFIX/bin/luajit
 
 topic "Building Kong"
 luarocks remove kong || true
