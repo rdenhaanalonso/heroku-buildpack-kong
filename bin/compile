@@ -113,7 +113,6 @@ LUAROCKS_VERSION=2.3.0
 SERF_VERSION=0.7.0
 
 KONG_SOURCE_DIR=${BP_CACHE_DIR}/kong-source
-LUAJIT_PREFIX=$APP_PREFIX/luajit
 
 # Cache the build
 VENDOR_CACHE_DIR=${BP_CACHE_DIR}/vendor
@@ -165,8 +164,9 @@ then
   topic "Building LuaJIT"
   tar -xf LuaJIT-${LUAJIT_VERSION}.tar.gz
   cd LuaJIT-${LUAJIT_VERSION}
-  make PREFIX=${LUAJIT_PREFIX}
-  make install PREFIX=${LUAJIT_PREFIX}
+  make PREFIX=${APP_PREFIX}
+  make install PREFIX=${APP_PREFIX}
+  ln -sf luajit-${LUAJIT_VERSION} ${APP_PREFIX}/bin/luajit
   cd ..
 
   topic "Building OpenResty"
@@ -187,7 +187,7 @@ then
 
   # Now we can build OpenResty / Nginx.
   cd ${OPENRESTY_DIR}
-  ./configure --prefix=$APP_PREFIX --with-pcre-jit --with-ipv6 --with-http_realip_module --with-http_ssl_module --with-http_stub_status_module --with-openssl=${OPENSSL_DIR} --with-luajit=${LUAJIT_PREFIX}
+  ./configure --prefix=$APP_PREFIX --with-pcre-jit --with-ipv6 --with-http_realip_module --with-http_ssl_module --with-http_stub_status_module --with-openssl=${OPENSSL_DIR} --with-luajit=${APP_PREFIX}
   make
   make install
   cd ..
@@ -196,7 +196,7 @@ then
   topic "Building LuaRocks"
   tar -xf luarocks-${LUAROCKS_VERSION}.tar.gz
   cd luarocks-${LUAROCKS_VERSION}
-  ./configure --prefix=$APP_PREFIX --lua-suffix=jit --with-lua=${LUAJIT_PREFIX}
+  ./configure --prefix=${APP_PREFIX} --lua-suffix=jit --with-lua=${APP_PREFIX}
   make build
   make install
   cd ..  
