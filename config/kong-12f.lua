@@ -162,6 +162,7 @@ print("Kong prepared_services "..S.block(prepared_services))
 local env_file
 env_file = io.open(profile_filename, "a+")
 
+env_file:write("export KONG_EXTERNAL_SUPERVISE=true\n")
 env_file:write("export KONG_CONF="..prepared_services.nginx._configuration_path.."\n")
 
 env_file:write("export NGINX_WORKING_DIR="..configuration.nginx_working_dir.."\n")
