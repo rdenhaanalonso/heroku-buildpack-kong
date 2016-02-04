@@ -108,11 +108,12 @@ OPENSSL_VERSION=1.0.2e
 OPENRESTY_VERSION=1.9.3.1
 NGINX_VERSION=1.9.3
 LUANGINX_VERSION=0.9.16
-LUA_VERSION=5.1.5
-LUAROCKS_VERSION=2.2.2
+LUAJIT_VERSION=2.1.0-beta1
+LUAROCKS_VERSION=2.3.0
 SERF_VERSION=0.7.0
 
 KONG_SOURCE_DIR=${BP_CACHE_DIR}/kong-source
+LUAJIT_PREFIX=$APP_PREFIX/luajit
 
 # Cache the build
 VENDOR_CACHE_DIR=${BP_CACHE_DIR}/vendor
@@ -161,6 +162,13 @@ then
   mv ${VENDOR_DIR} ${VENDOR_CACHE_DIR}
   cd ${VENDOR_CACHE_DIR}
 
+  topic "Building LuaJIT"
+  tar -xf LuaJIT-${LUAJIT_VERSION}.tar.gz
+  cd LuaJIT-${LUAJIT_VERSION}
+  make PREFIX=${LUAJIT_PREFIX}
+  make install PREFIX=${LUAJIT_PREFIX}
+  cd ..
+
   topic "Building OpenResty"
   # Build refs:
   # https://github.com/openresty/lua-nginx-module/issues/331#issuecomment-77279170
@@ -179,27 +187,16 @@ then
 
   # Now we can build OpenResty / Nginx.
   cd ${OPENRESTY_DIR}
-  ./configure --prefix=$APP_PREFIX --with-pcre-jit --with-ipv6 --with-http_realip_module --with-http_ssl_module --with-http_stub_status_module --with-openssl=${OPENSSL_DIR}
+  ./configure --prefix=$APP_PREFIX --with-pcre-jit --with-ipv6 --with-http_realip_module --with-http_ssl_module --with-http_stub_status_module --with-openssl=${OPENSSL_DIR} --with-luajit=${LUAJIT_PREFIX}
   make
   make install
   cd ..
 
-  topic "Symlinking LuaJIT from OpenResty"
-  ln -s $APP_PREFIX/luajit/bin/luajit-2.1.0-alpha $APP_PREFIX/bin/luajit
-
-  topic "Building Lua"
-  tar -xf lua-${LUA_VERSION}.tar.gz
-  cp lua-Makefile lua-${LUA_VERSION}/Makefile
-  cd lua-${LUA_VERSION}
-  export LUA_PREFIX=$APP_PREFIX
-  make
-  make install
-  cd ..
 
   topic "Building LuaRocks"
   tar -xf luarocks-${LUAROCKS_VERSION}.tar.gz
   cd luarocks-${LUAROCKS_VERSION}
-  ./configure --prefix=$APP_PREFIX
+  ./configure --prefix=$APP_PREFIX --with-lua=${LUAJIT_PREFIX}
   make build
   make install
   cd ..  
