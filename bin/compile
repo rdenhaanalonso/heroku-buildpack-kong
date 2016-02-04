@@ -221,12 +221,12 @@ luarocks remove kong || true
 if [ -d "$KONG_SOURCE_DIR" ]
 then
   cd $KONG_SOURCE_DIR
-  git pull
 else
   git clone https://github.com/mars/kong.git $KONG_SOURCE_DIR
   cd $KONG_SOURCE_DIR
 fi
 git checkout external-supervisor
+git pull
 luarocks make ./kong-*.rockspec
 luarocks install --only-deps --local ./kong-*.rockspec
 
