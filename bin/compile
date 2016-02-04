@@ -196,7 +196,7 @@ then
   topic "Building LuaRocks"
   tar -xf luarocks-${LUAROCKS_VERSION}.tar.gz
   cd luarocks-${LUAROCKS_VERSION}
-  ./configure --prefix=$APP_PREFIX --with-lua=${LUAJIT_PREFIX}
+  ./configure --prefix=$APP_PREFIX --lua-suffix=jit --with-lua=${LUAJIT_PREFIX}
   make build
   make install
   cd ..  
