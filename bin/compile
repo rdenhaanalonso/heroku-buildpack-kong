@@ -226,7 +226,7 @@ else
   git clone https://github.com/mars/kong.git $KONG_SOURCE_DIR
   cd $KONG_SOURCE_DIR
 fi
-git checkout public-service-prepare
+git checkout external-supervisor
 luarocks make ./kong-*.rockspec
 luarocks install --only-deps --local ./kong-*.rockspec
 
