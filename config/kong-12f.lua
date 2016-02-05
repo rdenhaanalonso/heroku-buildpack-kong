@@ -20,7 +20,8 @@ local template_filename = arg[1]
 local config_filename   = arg[2].."/config/kong.yml"
 local cert_filename     = arg[2].."/config/cassandra.cert"
 
-local profile_filename  = arg[2].."/.profile.d/kong-env.sh"
+-- not an `*.sh` file, because the Dyno manager should not exec
+local env_filename  = arg[2].."/.profile.d/kong-env"
 
 -- Read environment variables for runtime config
 local assigned_port     = os.getenv("PORT") or 8000
@@ -154,13 +155,13 @@ config_file:close()
 local configuration, configuration_path = config_loader.load_default(config_filename)
 local prepared_services = services.prepare_all(configuration, configuration_path)
 
-print("Kong configuration "..S.block(configuration))
-print("Kong prepared_services "..S.block(prepared_services))
+-- print("Kong configuration "..S.block(configuration))
+-- print("Kong prepared_services "..S.block(prepared_services))
 
 -- write env vars to `.profile.d` file for Heroku runtime
 -- https://devcenter.heroku.com/articles/profiled
 local env_file
-env_file = io.open(profile_filename, "a+")
+env_file = io.open(env_filename, "a+")
 
 env_file:write("export KONG_CONF="..prepared_services.nginx._configuration_path.."\n")
 
@@ -177,7 +178,7 @@ env_file:write("export SERF_NODE_NAME="..cluster_utils.get_node_name(configurati
 -- local var `EVENT_NAME` in kong.cli.services.serf
 env_file:write("export SERF_EVENT_HANDLER=".."member-join,member-leave,member-failed,member-update,member-reap,user:kong="..prepared_services.serf._script_path.."\n")
 
-env_file:seek("set", 0)
-print(".profile.d/kong-env.sh: \n"..env_file:read("*a"))
+-- env_file:seek("set", 0)
+-- print(".profile.d/kong-env.sh: \n"..env_file:read("*a"))
 
 env_file:close()

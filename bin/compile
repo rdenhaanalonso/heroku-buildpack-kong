@@ -251,8 +251,8 @@ ${BP_DIR}/bin/install-luarocks
 
 topic "Enabling Kong 12-factor config"
 cd ${BP_DIR}
-mkdir -p $APP_PREFIX/bin
-mv kong-12f $APP_PREFIX/bin/
+mkdir -p $BUILD_DIR/.profile.d
+mv .profile.d/* $BUILD_DIR/.profile.d
 mkdir -p $BUILD_DIR/config
 mv config/* $BUILD_DIR/config
 

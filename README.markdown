@@ -28,13 +28,6 @@ Usage
 -----
 To use this buildpack for an app, `config/kong.yml.etlua` must exist. Copy it from [this repo](config/kong.yml.etlua), or clone the [heroku-kong app](https://github.com/heroku/heroku-kong).
 
-Execute `kong-12f` in the app root before every run, to configure from the environment.
-
-For example, the default web process is:
-```
-kong-12f && kong start -c config/kong.yml
-```
-
 ### Environment variables
 
   * Port exposed on the app/dyno
@@ -42,6 +35,9 @@ kong-12f && kong start -c config/kong.yml
     * Listener assigned to the port:
       * `KONG_EXPOSE=proxy` for the gateway (default)
       * `KONG_EXPOSE=admin` for the Admin API
+  * Kong cluster symmetric encryption
+    * `KONG_CLUSTER_SECRET`
+    * Create with `serf keygen`
   * Cassandra datastore
     * Heroku-style config vars
       * `CASSANDRA_URL`
