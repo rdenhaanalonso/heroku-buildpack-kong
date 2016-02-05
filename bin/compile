@@ -25,6 +25,25 @@ BP_CACHE_DIR="$CACHE_DIR/heroku-kong-buildpack"
 mkdir -p $BP_CACHE_DIR
 PREFIX_CACHE_DIR=$BP_CACHE_DIR/app_prefix
 
+# Source for Kong
+KONG_GIT_URL=https://github.com/mars/kong.git
+# commit or tag to checkout
+KONG_GIT_COMMITISH=external-supervisor
+KONG_SOURCE_DIR=${BP_CACHE_DIR}/kong-source
+
+# Set dependency versions.
+# These correspond to the archives in `vendor/`.
+# If upgrading any those archives, then update the corresponding version here.
+LUAJIT_VERSION=2.1.0-beta1
+LUAROCKS_VERSION=2.3.0
+SERF_VERSION=0.7.0
+OPENSSL_VERSION=1.0.2e
+OPENRESTY_VERSION=1.9.3.1
+# Bundled with OpenResty (not vendored separately)
+NGINX_VERSION=1.9.3
+LUANGINX_VERSION=0.9.16
+
+
 function error() {
   echo " !     $*" >&2
   exit 1
@@ -103,16 +122,6 @@ export | grep -E -e ' (PATH|LD_LIBRARY_PATH|LIBRARY_PATH|INCLUDE_PATH|CPATH|CPPP
 # Once the installed packages are in the PATH, use them.
 
 # Build from source to have dyno-compatible path prefix
-# Set versions. Check http://openresty.org for latest version and bundled version of nginx.
-OPENSSL_VERSION=1.0.2e
-OPENRESTY_VERSION=1.9.3.1
-NGINX_VERSION=1.9.3
-LUANGINX_VERSION=0.9.16
-LUAJIT_VERSION=2.1.0-beta1
-LUAROCKS_VERSION=2.3.0
-SERF_VERSION=0.7.0
-
-KONG_SOURCE_DIR=${BP_CACHE_DIR}/kong-source
 
 # Cache the build
 VENDOR_CACHE_DIR=${BP_CACHE_DIR}/vendor
@@ -213,23 +222,27 @@ else
   error "Error detecting cached build: diff exited ${DIFF_STATUS}"
 fi
 
-topic "Building Kong"
+topic "Building Kong from ${KONG_GIT_URL}#${KONG_GIT_COMMITISH}"
+# Ensure we don't have Kong from a previous build
 luarocks remove kong || true
 if [ -d "$KONG_SOURCE_DIR" ]
 then
-  cd $KONG_SOURCE_DIR
+  indent "Using cached git repo"
 else
-  git clone https://github.com/mars/kong.git $KONG_SOURCE_DIR
-  cd $KONG_SOURCE_DIR
+  git clone $KONG_GIT_URL $KONG_SOURCE_DIR
 fi
-git checkout external-supervisor
+cd $KONG_SOURCE_DIR
+git checkout $KONG_GIT_COMMITISH
 git pull
+# Install Kong itself from the cloned git repo
 luarocks make ./kong-*.rockspec
+# Install Kong's dependencies via LuaRocks
+# (`--local` is required for this to do anything)
 luarocks install --only-deps --local ./kong-*.rockspec
 
 topic "Installing Lua rocks for kong-12f"
-luarocks install etlua 1.2.0-1
-luarocks install moses 1.4.0-1
+luarocks install etlua 1.2.0
+luarocks install moses 1.4.0
 luarocks install serpent
 
 topic "Installing Lua rocks specified in .luarocks"
