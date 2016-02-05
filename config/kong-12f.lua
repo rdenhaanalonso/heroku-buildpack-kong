@@ -155,8 +155,8 @@ config_file:close()
 local configuration, configuration_path = config_loader.load_default(config_filename)
 local prepared_services = services.prepare_all(configuration, configuration_path)
 
-print("Kong configuration "..S.block(configuration))
-print("Kong prepared_services "..S.block(prepared_services))
+-- print("Kong configuration "..S.block(configuration))
+-- print("Kong prepared_services "..S.block(prepared_services))
 
 -- write env vars to `.profile.d` file for Heroku runtime
 -- https://devcenter.heroku.com/articles/profiled
@@ -178,7 +178,7 @@ env_file:write("export SERF_NODE_NAME="..cluster_utils.get_node_name(configurati
 -- local var `EVENT_NAME` in kong.cli.services.serf
 env_file:write("export SERF_EVENT_HANDLER=".."member-join,member-leave,member-failed,member-update,member-reap,user:kong="..prepared_services.serf._script_path.."\n")
 
-env_file:seek("set", 0)
-print(".profile.d/kong-env.sh: \n"..env_file:read("*a"))
+-- env_file:seek("set", 0)
+-- print(".profile.d/kong-env.sh: \n"..env_file:read("*a"))
 
 env_file:close()
