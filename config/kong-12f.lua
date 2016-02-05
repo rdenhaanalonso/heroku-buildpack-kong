@@ -20,7 +20,8 @@ local template_filename = arg[1]
 local config_filename   = arg[2].."/config/kong.yml"
 local cert_filename     = arg[2].."/config/cassandra.cert"
 
-local profile_filename  = arg[2].."/.profile.d/kong-env.sh"
+-- not an `*.sh` file, because the Dyno manager should not exec
+local env_filename  = arg[2].."/.profile.d/kong-env"
 
 -- Read environment variables for runtime config
 local assigned_port     = os.getenv("PORT") or 8000
@@ -160,7 +161,7 @@ print("Kong prepared_services "..S.block(prepared_services))
 -- write env vars to `.profile.d` file for Heroku runtime
 -- https://devcenter.heroku.com/articles/profiled
 local env_file
-env_file = io.open(profile_filename, "a+")
+env_file = io.open(env_filename, "a+")
 
 env_file:write("export KONG_CONF="..prepared_services.nginx._configuration_path.."\n")
 
