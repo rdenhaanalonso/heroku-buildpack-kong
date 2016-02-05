@@ -35,6 +35,9 @@ To use this buildpack for an app, `config/kong.yml.etlua` must exist. Copy it fr
     * Listener assigned to the port:
       * `KONG_EXPOSE=proxy` for the gateway (default)
       * `KONG_EXPOSE=admin` for the Admin API
+  * Kong cluster symmetric encryption
+    * `KONG_CLUSTER_SECRET`
+    * Create with `serf keygen`
   * Cassandra datastore
     * Heroku-style config vars
       * `CASSANDRA_URL`
