@@ -1,5 +1,29 @@
+# Kong app config template
+
 ## Custom plugins on this server
 custom_plugins:
+  - ssl
+  - jwt
+  - acl
+  - cors
+  - oauth2
+  - tcp-log
+  - udp-log
+  - file-log
+  - http-log
+  - key-auth
+  - hmac-auth
+  - basic-auth
+  - ip-restriction
+  - mashape-analytics
+  - request-transformer
+  - response-transformer
+  - request-size-limiting
+  - rate-limiting
+  - response-ratelimiting
+  - hello-world-header
+  - ndfd-xml-as-json
+  - librato-analytics
 
 ## The Kong working directory
 ## (Make sure you have read and write permissions)
@@ -11,6 +35,9 @@ proxy_listen_ssl: "0.0.0.0:<%= proxy_ssl_port %>"
 admin_api_listen: "0.0.0.0:<%= admin_api_port %>"
 cluster_listen: "<%= cluster_listen %>"
 
+cluster:
+  encrypt: "<%= cluster_secret %>"
+
 ## Specify the DAO to use
 database: cassandra
 
@@ -20,19 +47,17 @@ cassandra:
 <% for i, host in pairs(cassandra_hosts) do -%>
     - "<%= host %>"
 <% end -%>
-  user: "<%= cassandra_user %>"
+  username: "<%= cassandra_user %>"
   password: "<%= cassandra_password %>"
   keyspace: "<%= cassandra_keyspace %>"
-  timeout: 1000
-  keepalive: 60000 # in milliseconds
-  ssl: <%= cassandra_ssl %>
+  replication_strategy: "SimpleStrategy" 
+  replication_factor: 3
+  ssl:
+    enabled: <%= cassandra_ssl %>
 <% if cassandra_ssl then -%>
-  ssl_verify: true
-  ssl_certificate: "/<%= cassandra_cert %>"
+    verify: true
+    certificate_authority: "<%= cassandra_cert %>"
 <% end -%>
-
-## Cassandra cache configuration
-database_cache_expiration: 5 # in seconds
 
 ## SSL Settings
 ## (Uncomment the two properties below to set your own certificate)
@@ -43,15 +68,19 @@ database_cache_expiration: 5 # in seconds
 send_anonymous_reports: true
 
 ## In-memory cache size (MB)
-memory_cache_size: 128
+memory_cache_size: 256
 
 ## Nginx configuration
 nginx: |
   user {{user}};
   worker_processes auto;
   # On Heroku, stream into logplex
+  # https://devcenter.heroku.com/articles/process-model#output-streams-as-logs
   error_log stderr info;
-  daemon on;
+  # On Heroku, do not daemonize
+  # https://devcenter.heroku.com/articles/runtime-principles#foreground-execution
+  # Do NOT set `daemon` here, so it can be overridden at runtime in `Procfile.web`
+  #daemon off; ## "on" is the default
   worker_rlimit_nofile {{auto_worker_rlimit_nofile}};
   env KONG_CONF;
   env KONG_EXTERNAL_SUPERVISE;
