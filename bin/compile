@@ -227,11 +227,12 @@ topic "Building Kong from ${KONG_GIT_URL}#${KONG_GIT_COMMITISH}"
 luarocks remove kong || true
 if [ -d "$KONG_SOURCE_DIR" ]
 then
-  indent "Using cached git repo"
+  cd $KONG_SOURCE_DIR
+  git fetch
 else
   git clone $KONG_GIT_URL $KONG_SOURCE_DIR
+  cd $KONG_SOURCE_DIR
 fi
-cd $KONG_SOURCE_DIR
 git checkout $KONG_GIT_COMMITISH
 git pull
 # Install Kong itself from the cloned git repo
