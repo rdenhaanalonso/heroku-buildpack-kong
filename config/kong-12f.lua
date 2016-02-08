@@ -78,6 +78,9 @@ else
   error("Configuration failed: requires `CASSANDRA_URL` or `IC_CONTACT_POINTS` environment variable.")
 end
 
+-- Prefer replication factor of three or less (then, the number of hosts)
+local cassandra_replication_factor = math.min(3, #cassandra_hosts)
+
 -- Default keyspace to value of `CASSANDRA_KEYSPACE` or simply "kong".
 cassandra_keyspace = cassandra_keyspace or os.getenv("CASSANDRA_KEYSPACE") or "kong"
 
@@ -140,7 +143,8 @@ local values = {
   cassandra_password  = cassandra_password,
   cassandra_keyspace  = cassandra_keyspace,
   cassandra_ssl       = cassandra_ssl,
-  cassandra_cert      = cert_filename
+  cassandra_cert      = cert_filename,
+  cassandra_replication_factor = cassandra_replication_factor
 }
 
 local config = template(values)
