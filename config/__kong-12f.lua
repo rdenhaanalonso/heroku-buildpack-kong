@@ -1,0 +1,177 @@
+local etlua = require "etlua"
+local lub = require "lub"
+local _ = require "moses"
+
+local S = require "serpent"
+
+local constants = require "kong.constants"
+local config_loader = require "kong.tools.config_loader"
+local services = require "kong.cli.utils.services"
+local cluster_utils = require "kong.tools.cluster"
+local serf_service = require "kong.cli.services.serf"
+
+-- exit success so that the dyno will start-up anyway
+local function eager_fail()
+    print('')
+    print('Could not complete configuration. See error output, above.')
+    os.exit()
+end
+
+local rel_config_file = "config/kong.yml"
+local rel_env_file    = ".profile.d/kong-env"
+
+-- 12-factor config generator for Kong
+-- execute with `kong-12f {template-file} {destination-dir}`
+
+-- Use shell command arguments to set file locations
+-- first arg: the ETLUA template
+-- second arg: the buildpack/app directory
+local template_filename = arg[1]
+local config_filename   = arg[2].."/"..rel_config_file
+
+-- not an `*.sh` file, because the Dyno manager should not exec
+local env_filename  = arg[2].."/"..rel_env_file
+
+-- Read environment variables for runtime config
+local assigned_port     = os.getenv("PORT") or 8000
+local expose_service    = os.getenv("KONG_EXPOSE") -- `proxy` (default), `admin`, `proxyssl`, `dnsmasq`
+
+local cluster_secret    = os.getenv("KONG_CLUSTER_SECRET")
+if not cluster_secret then
+    print("Configuration failed: requires `KONG_CLUSTER_SECRET` environment variable; create with `serf keygen`.")
+    eager_fail()
+end
+local cluster_port      = os.getenv("KONG_CLUSTER_PRIVATE_PORT") or 7946
+local cluster_address   = os.getenv("KONG_CLUSTER_PRIVATE_IP")
+if not cluster_address then
+    print("Configuration failed: requires `KONG_CLUSTER_PRIVATE_IP` environment variable.")
+    eager_fail()
+end
+local cluster_listen    = cluster_address..":"..cluster_port
+
+local serf_log_level    = os.getenv("SERF_LOG_LEVEL") or "err"
+local kong_log_level    = os.getenv("KONG_LOG_LEVEL") or "info"
+
+-- Configure Postgres
+local postgres_user
+local postgres_password
+local postgres_host
+local postgres_port
+local postgres_database
+
+if os.getenv("DATABASE_URL") ~= nil then
+    -- Default to parsing `DATABASE_URL`,
+    -- a comma-separated list of Heroku-style database URLs
+    local url_pattern     = "postgres://([^:]+):([^@]+)@([^:]+):([^/]+)/([^,]+)"
+    local database_url    = os.getenv("DATABASE_URL")
+    for user, password, host, port, database in string.gmatch(database_url, url_pattern) do
+        postgres_user      = user
+        postgres_password  = password
+        postgres_host      = host
+        postgres_port      = port
+        postgres_database  = database
+    end
+else
+    print("Configuration failed: requires `DATABASE_URL`environment variable.")
+    eager_fail()
+end
+
+-- Configure the service to expose on PORT
+local proxy_port
+local proxy_ssl_port
+local admin_api_port
+local dnsmasq_port
+if expose_service == "admin" then
+    print("Configuring as Kong admin API")
+    proxy_port = 1 + assigned_port
+    proxy_ssl_port = 2 + assigned_port
+    admin_api_port = assigned_port
+    dnsmasq_port = 3 + assigned_port
+elseif expose_service == "proxyssl" then
+    print("Configuring as Kong SSL proxy")
+    proxy_port = 1 + assigned_port
+    proxy_ssl_port = assigned_port
+    admin_api_port = 2 + assigned_port
+    dnsmasq_port = 3 + assigned_port
+elseif expose_service == "dnsmasq" then
+    print("Configuring as Kong dnsmasq")
+    proxy_port = 1 + assigned_port
+    proxy_ssl_port = 2 + assigned_port
+    admin_api_port = 3 + assigned_port
+    dnsmasq_port = assigned_port
+else
+    print("Configuring as Kong proxy")
+    proxy_port = assigned_port
+    proxy_ssl_port = 1 + assigned_port
+    admin_api_port = 2 + assigned_port
+    dnsmasq_port = 3 + assigned_port
+end
+
+-- Render the Kong configuration file
+local template_file = io.open(template_filename, "r")
+local template = etlua.compile(template_file:read("*a"))
+template_file:close()
+
+local values = {
+    proxy_port          = proxy_port,
+    proxy_ssl_port      = proxy_ssl_port,
+    admin_api_port      = admin_api_port,
+    cluster_listen      = cluster_listen,
+    cluster_secret      = cluster_secret,
+    dnsmasq_port        = dnsmasq_port,
+    postgres_user       = postgres_user,
+    postgres_password   = postgres_password,
+    postgres_host       = postgres_host,
+    postgres_port       = postgres_port,
+    postgres_database   = postgres_database,
+    kong_log_level      = kong_log_level
+}
+
+local config = template(values)
+
+local config_file
+config_file = io.open(config_filename, "w")
+config_file:write(config)
+config_file:close()
+
+print("Wrote Kong config: "..rel_config_file)
+
+-- Call into kong.cli.services modules to prepare the services (nginx, dnsmasq, serf)
+
+local configuration, configuration_path = config_loader.load_default(config_filename)
+local prepared_services, err = services.prepare_all(configuration, configuration_path)
+if err then
+    print('Error preparing Kong services: '..err)
+    eager_fail()
+end
+
+-- print("Kong configuration "..S.block(configuration))
+-- print("Kong prepared_services "..S.block(prepared_services))
+
+-- write env vars to `.profile.d` file for Heroku runtime
+-- https://devcenter.heroku.com/articles/profiled
+local env_file
+env_file = io.open(env_filename, "a+")
+
+env_file:write("export KONG_CONF="..prepared_services.nginx._configuration_path.."\n")
+
+env_file:write("export NGINX_WORKING_DIR="..configuration.nginx_working_dir.."\n")
+env_file:write("export NGINX_CONFIG="..constants.CLI.NGINX_CONFIG.."\n")
+
+env_file:write("export DNSMASQ_PORT="..configuration.dns_resolver.port.."\n")
+
+env_file:write("export SERF_CLUSTER_LISTEN="..configuration.cluster_listen.."\n")
+env_file:write("export SERF_CLUSTER_LISTEN_RPC="..configuration.cluster_listen_rpc.."\n")
+env_file:write("export SERF_ENCRYPT="..(configuration.cluster.encrypt or '""').."\n")
+env_file:write("export SERF_NODE_NAME="..cluster_utils.get_node_name(configuration).."\n")
+env_file:write("export SERF_LOG_LEVEL="..serf_log_level.."\n")
+
+-- In the event handler, "kong" value is a copy of hardcoded,
+-- local var `EVENT_NAME` in kong.cli.services.serf
+env_file:write("export SERF_EVENT_HANDLER=".."member-join,member-leave,member-failed,member-update,member-reap,user:kong="..prepared_services.serf._script_path.."\n")
+
+-- env_file:seek("set", 0)
+-- print(".profile.d/kong-env.sh: \n"..env_file:read("*a"))
+
+env_file:close()
+print("Wrote environment exports: "..rel_env_file)
